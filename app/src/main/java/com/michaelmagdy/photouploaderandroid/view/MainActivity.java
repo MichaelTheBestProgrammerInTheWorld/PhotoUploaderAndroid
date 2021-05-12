@@ -4,7 +4,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.content.Intent;
@@ -13,20 +16,26 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.michaelmagdy.photouploaderandroid.R;
 import com.michaelmagdy.photouploaderandroid.model.Repository;
+import com.michaelmagdy.photouploaderandroid.model.webservice.FileInfos;
 import com.michaelmagdy.photouploaderandroid.viewmodel.MainActivityViewModel;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private FloatingActionButton uploadBtn;
     private ProgressBar progressBar;
+    private TextView noImgsTxt;
+    private RecyclerView recyclerView;
+    private  ImagesListAdapter imagesListAdapter;
     public static final int PICK_IMAGE_REQUEST_CODE = 100;
     private MainActivityViewModel mainActivityViewModel;
 
@@ -51,12 +60,30 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, PICK_IMAGE_REQUEST_CODE);
             }
         });
+        mainActivityViewModel.getImagesLiveData().observe(this, new Observer<List<FileInfos>>() {
+            @Override
+            public void onChanged(List<FileInfos> fileInfos) {
+                progressBar.setVisibility(View.GONE);
+                if (fileInfos.isEmpty()){
+                    noImgsTxt.setVisibility(View.VISIBLE);
+                } else {
+                    noImgsTxt.setVisibility(View.GONE);
+                    imagesListAdapter.submitList(fileInfos);
+                }
+
+            }
+        });
     }
 
     private void initViews() {
 
         uploadBtn = findViewById(R.id.upload_button);
         progressBar = findViewById(R.id.progressBar);
+        recyclerView = findViewById(R.id.images_list);
+        noImgsTxt = findViewById(R.id.textView);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        imagesListAdapter = new ImagesListAdapter();
+        recyclerView.setAdapter(imagesListAdapter);
     }
 
     @Override
